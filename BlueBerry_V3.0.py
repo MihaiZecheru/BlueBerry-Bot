@@ -969,34 +969,39 @@ class Rep:
   @staticmethod
   @bot.command(aliases=['thank'])
   @commands.cooldown(1, 300, commands.BucketType.member) # once every 5 minutes per user
-  async def thanks(ctx, target=None):
-    # init data
-    Rep.get_data(ctx)
-
-    if target == None:
-      await ctx.channel.send(embed=discord.Embed(color=0xdb0a0a, timestamp=datetime.utcnow(), description='Command Format: `!<thanks | thank> <@user>`'))
+  async def thanks(ctx, *targets):
+    # for testing purposes, I don't want to have any cooldown
+    if ctx.author.id == 549456138698227712:
       ctx.command.reset_cooldown(ctx)
 
-    if target.startswith('<@!'):
-      user_id = int(target[3:-1])
-      if user_id != ctx.author.id:
-        if user_id in Rep.user_ids:
-          # get username
-          username = Rep.id_to_name_dict.get(user_id)
-          # add one point
-          db[f'members_{Rep.server_name}'][username] += 1
-          
-          # add weekly tracker points for target and author
-          db['weekly_tracker_{}'.format(Rep.server_name)][str(ctx.author.id)]['got_help'] += 1
-          db['weekly_tracker_{}'.format(Rep.server_name)][str(user_id)]['helped_someone'] += 1
-
-          # tell user it worked
-          await ctx.channel.send(embed=discord.Embed(timestamp=datetime.now(), description='Added 1 point to **{}**'.format(username), color=success).set_footer(text='Point Added', icon_url=bburl))
-        else:
-          await ctx.channel.send(embed=discord.Embed(title='Invalid User', description='{} is not in server'.format(f'<@!{user_id}>'), color=error))
-      else:
-        await ctx.channel.send(embed=discord.Embed(description="You can't give points to yourself", color=error))
+    # init data
+    Rep.get_data(ctx)
+    
+    for target in targets:
+      if target == None:
+        await ctx.channel.send(embed=discord.Embed(color=0xdb0a0a, timestamp=datetime.utcnow(), description='Command Format: `!<thanks | thank> <@user>`'))
         ctx.command.reset_cooldown(ctx)
+
+      if target.startswith('<@!'):
+        user_id = int(target[3:-1])
+        if user_id != ctx.author.id:
+          if user_id in Rep.user_ids:
+            # get username
+            username = Rep.id_to_name_dict.get(user_id)
+            # add one point
+            db[f'members_{Rep.server_name}'][username] += 1
+            
+            # add weekly tracker points for target and author
+            db['weekly_tracker_{}'.format(Rep.server_name)][str(ctx.author.id)]['got_help'] += 1
+            db['weekly_tracker_{}'.format(Rep.server_name)][str(user_id)]['helped_someone'] += 1
+
+            # tell user it worked
+            await ctx.channel.send(embed=discord.Embed(timestamp=datetime.now(), description='Added 1 point to **{}**'.format(username), color=success).set_footer(text='Point Added', icon_url=bburl))
+          else:
+            await ctx.channel.send(embed=discord.Embed(title='Invalid User', description='{} is not in server'.format(f'<@!{user_id}>'), color=error))
+        else:
+          await ctx.channel.send(embed=discord.Embed(description="You can't give points to yourself", color=error))
+          ctx.command.reset_cooldown(ctx)
 
   @staticmethod
   @bot.command()
