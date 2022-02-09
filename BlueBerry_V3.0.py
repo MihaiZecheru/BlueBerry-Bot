@@ -96,7 +96,24 @@ async def on_ready():
   guilds = {guild.name.replace(" ", "_"): {'true_name': guild.name, 'id': guild.id, 'members': guild.members, 'channels': guild.text_channels} for guild in bot.guilds}
 
   # guild = discord.utils.get(bot.guilds, id=guilds.get("Test_server").get('id'))
-  # channels = guild.text_channels 
+  # channels = guild.text_channels
+
+# TODO: add updated code to the github and rerun this bots code. make sure to checkl that the function below is workling first
+
+@bot.event
+async def on_member_join(member):
+  message = "Welcome to {}! To see what I can do, type `!help` in a server you're in with me.\n\nTo sum everything up though, type `!thanks <@user>` to award someone 1 rep for helping you out, and `!lb` to see who has the most rep!".format(member.guild.name)
+  await member.send(message)
+
+  # if this doesn't work, means the bot was added VERY recently and couldn't be initialized
+  try:
+    # add member to all dicts
+    GUILD = member.guild
+    db[f'members_{GUILD.name}'][member.name] = 0
+    db[f'opts_{GUILD.name}'].append(member.id)
+    db['weekly_tracker_{}'.format(GUILD.name)][member.id] = {'helped_someone': 0, 'got_help': 0}
+  except Exception as e:
+    print(e)
 
 class AdminCmds:
 
@@ -1145,12 +1162,19 @@ class Extra:
 def rep_stats_manager():
   print("\033[1;32;40mRepStatsManager: started\033[0m")
   time.sleep(10)
+  hasSent = False
   
   while True:
     time.sleep(10)
+
+    # check for the day after the end of the week
+    if datetime.today().weekday() == 3:
+      hasSent = False
+    
     # check for end of week
-    if datetime.today().weekday() == 6: # 6 is sunday, 0 is monday
+    if datetime.today().weekday() == 0 and not hasSent: # 6 is saturday, 0 is sunday, 1 is monday
       print("\033[33mRepStatsManager Event: endOfWeek\033[0m")
+      hasSent = True
 
       for guild in bot.guilds:
         try:
@@ -1159,16 +1183,16 @@ def rep_stats_manager():
           gave = sorted([(value.get("helped_someone"), key) for key, value in db["weekly_tracker_{}".format(guild.name)].items()], key=lambda x: x[0], reverse=True)
 
           # get the top three of each category
-          recieved_the_most_help = "\n".join([f'**{(bot.get_user(int(INFO[1]))).name}**: {INFO[0]}' for INFO in recieved[:(len(recieved) - 3)]])
+          recieved_the_most_help = "\n".join([f'**{(bot.get_user(int(INFO[1]))).name}**: {INFO[0]}' for INFO in recieved[:5]])
 
-          gave_the_most_help = "\n".join([f'**{(bot.get_user(int(INFO[1]))).name}**: {INFO[0]}' for INFO in gave[:(len(gave) - 3)]])
+          gave_the_most_help = "\n".join([f'**{(bot.get_user(int(INFO[1]))).name}**: {INFO[0]}' for INFO in gave[:5]])
 
           # reset dictionary
           for member in db['weekly_tracker_{}'.format(guild)]:
             db['weekly_tracker_{}'.format(guild)][member] = {'helped_someone': 0, 'got_help': 0}
 
           # make embed
-          embed = discord.Embed(timestamp=datetime.utcnow()).set_footer(text='{} Stats'.format(guild.name), icon_url=bburl).add_field(inline=True, name='__**Recieved Help The Most**__', value=recieved_the_most_help).add_field(inline=True, name='__**Gave Help The Most**__', value=f'\n{gave_the_most_help}')
+          embed = discord.Embed(color=0x429ef5, timestamp=datetime.utcnow()).set_footer(text='{} Stats'.format(guild.name), icon_url=bburl).add_field(inline=True, name='__**Recieved Help The Most**__', value=recieved_the_most_help).add_field(inline=True, name='__**Gave Help The Most**__', value=f'\n{gave_the_most_help}')
           CHANNEL = bot.get_channel(db['configurations_{}'.format(guild.name)].get('channel'))
           if CHANNEL is None:
             print('channel is none')
