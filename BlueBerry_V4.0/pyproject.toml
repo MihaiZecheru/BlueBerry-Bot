@@ -1,0 +1,18 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool]
+[tool.poetry]
+authors = ["Chrysler"]
+description = "BlueBerry Discord Bot"
+name = "repl_python3_bot-scripts"
+version = "0.1.0"
+[tool.poetry.dependencies]
+Flask = "^2.0.2"
+discord = "^1.7.3"
+python = "^3.8"
+replit = "^3.2.4"
+schedule = "^1.1.0"
+pytz = "^2021.3"
+[tool.poetry.dev-dependencies]
